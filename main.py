@@ -1,57 +1,41 @@
 from flask import Flask, jsonify, request
-from flask_restful import Api, Resource, reqparse, abort
+from flask_restful import Api
 from flask_pymongo import pymongo
-from werkzeug.wrappers import response
 import db_config as database 
+
+
+
+from res.badge import Badge
+from res.badges import Badges 
 
 app=Flask(__name__)
 api=Api(app)
 
-""" 
-    database.db.Badge.
-    .database is the config file
-    .db is the database name
-    .collectionName the next part is the collection
-"""
 
-class Test(Resource):
-    def  get(self):
-        return jsonify({"message": "Test ok, you are ok"})
+api.add_resource(Badge,'/new/', '/<string:by>=<string:data>/')
+api.add_resource(Badges, '/all/')
 
-class Badge(Resource):
-    def post(self):
-        database.db.Users.insert_one({
-            'Header_P': request.json["Header_P"],
-            'picture': request.json["picture"],
-            'name':request.json["name"],
-            'age':request.json["age"],
-            'city':request.json["city"],
-            'followers':request.json["followers"],
-            'likes':request.json["likes"],
-            'post':request.json["post"],
-        })
-
-class AllBadge(Resource):
-    def get(self):
-        pass
-
-api.add_resource(Badge,'/new/')
-api.add_resource(Test,'/test/')
-
-@app.route('all/adults')
-def get_kids():
+@app.route('/all/adults/')
+def get_adults():
     response = list(database.db.Badges.find({'age':{"$gte": 25}}))
     for document in response:
         document["_id"] = str(document["_id"])
         return jsonify(response)
 
+@app.route('/all/projection/')
+def get_name_and_age():
+    response = list(database.db.Badges.find({'age':{"$gte": 25}}, {'name': 1, 'age': 1}))
+    for document in response:
+        document["_id"] = str(document["_id"])
+    return jsonify(response)
 
-@app.route('all/kids')
+@app.route('/all/kids/')
 def get_kids():
     response = list(database.db.Badges.find({'age':{"$gte": 10}}))
     for document in response:
         document["_id"] = str(document["_id"])
-        return jsonify(response)
+    return jsonify(response)
+
 
 if __name__ == "__main__":
     app.run(load_dotenv=True)
